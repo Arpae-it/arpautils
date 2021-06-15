@@ -1,6 +1,0 @@
- * funzioni e procedure per statistiche annuali:
-  * Pb, As, Cd, Ni, benzo(a)pyrene
- * scrivere efficienza su WEB_ELAB (annuale, mensile)
- * generic_annual_report.R: correggere calcolo giorni attesi nei mesi critici
- * funzioni e procedure per statistiche mensili
- * funzioni e procedure per IQA
