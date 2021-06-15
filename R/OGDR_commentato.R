@@ -1,7 +1,7 @@
-## credenziali di accesso al DB
-db_usr = "AA_USER"
-db_pwd = "USER_AA"
-db_name = "//192.168.41.110:1521/rmqac"  
+## credenziali di accesso al DB prendile dalla configurazione
+db_usr = ""
+db_pwd = ""
+db_name = ""  
 
 ## funzione di help
 #script <- "OGDR.R"
