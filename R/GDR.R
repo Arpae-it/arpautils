@@ -1,7 +1,7 @@
 ## credenziali di accesso al DB
-db_usr = "AA_WEB"
-db_pwd = "WEB_AA"
-db_name = "//192.168.41.110:1521/rmqac"  
+db_usr = ""
+db_pwd = ""
+db_name = ""  
 
 ## funzione di help
 script <- "GDR.R"
