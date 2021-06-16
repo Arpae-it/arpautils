@@ -7,6 +7,10 @@
 ## 4) scrittura su DB
 
 
+tabelladb<-"WEB_STAT_CPY"
+#tabelladb<-"WEB_STAT"
+
+
 prepare.daily_report <- function(con,
                                  id.staz,
                                  id.param,
@@ -261,8 +265,8 @@ write.daily_report <- function(con,
                                   "where ID_CONFIG_STAZ=",DR$id.staz)))
   ## gestisce LOD
   lod <- dbqa.lod(con = con, id.param = id.param, days = DR$first.time.day)
-  
-  ## funzione per la scrittura su tabella WEB_STAT
+
+  ## funzione per la scrittura su tabella WEB_STAT*
   dbqa.insert_elab <- function(id_elab,id_evento=0,v_elab,type,ts1,ts2,n_dati,flg_elab=1,...) {
     vv <- data.frame(GIORNO         =date4db(DR$first.time.day),
                      ID_CONFIG_STAZ =DR$id.staz,
@@ -293,21 +297,21 @@ write.daily_report <- function(con,
                                               no   = ""),
                        row.names = NULL)
     }
-    dbqa.insert(con=con, tab="WEB_STAT",
+    dbqa.insert(con=con, tab=tabelladb,
                 values=vv,
                 to_date=c(1,8,9,10),
                 verbose=verbose,
                 ...)
-  }#fine definizione della funzione
+  } #fine definizione della funzione
   
   ## inserisce elaborazioni giornaliere floating
   # max med 8h (solo CO)
-  if("max.ave.8h" %in% colnames(DR$daily.report) && !is.na(DR$daily.report$max.ave.8h)) {
-    if(id.param==10) { 
-      
+  if("max.ave.8h" %in% colnames(DR$daily.report)) {
+    if(id.param==10) { # CO
+      # max average 8h
       id.elab=3
       
-      dbqa.delete(con=con, tab="WEB_STAT",
+      dbqa.delete(con=con, tab=tabelladb,
                   keys=c("to_char(GIORNO,'YYYY-MM-DD')",
                          "ID_CONFIG_STAZ",
                          "ID_PARAMETRO",
@@ -319,22 +323,24 @@ write.daily_report <- function(con,
                   verbose=verbose)
       dbCommit(con)
       
-      dbqa.insert_elab(id_elab=id.elab,
-                       v_elab=DR$daily.report$max.ave.8h,
-                       type="F",
-                       ts1=date4db(DR$first.time.day),
-                       ts2=date4db(DR$last.time),
-                       n_dati=NA,
-                       ...)
+      if(!is.na(DR$daily.report$max.ave.8h)) {
+        dbqa.insert_elab(id_elab=id.elab,
+                         v_elab=DR$daily.report$max.ave.8h,
+                         type="F",
+                         ts1=date4db(DR$first.time.day),
+                         ts2=date4db(DR$last.time),
+                         n_dati=NA,
+                         ...)
+      }  
     }
   }
   
   # daily max
-  if("max.day" %in% colnames(DR$daily.report) && !is.na(DR$daily.report$max.day)) {
-    
+  if("max.day" %in% colnames(DR$daily.report)) {
+    # max.day
     id.elab=88
     
-    dbqa.delete(con=con, tab="WEB_STAT",
+    dbqa.delete(con=con, tab=tabelladb,
                 keys=c("to_char(GIORNO,'YYYY-MM-DD')",
                        "ID_CONFIG_STAZ",
                        "ID_PARAMETRO",
@@ -346,20 +352,24 @@ write.daily_report <- function(con,
                 verbose=verbose)
     dbCommit(con)
     
-    dbqa.insert_elab(id_elab=id.elab,
-                     v_elab=DR$daily.report$max.day,
-                     type="F",
-                     ts1=date4db(DR$first.time.day+3600*DR$daily.report$hour.max.day),
-                     ts2=date4db(DR$first.time.day+3600*DR$daily.report$hour.max.day+60*60),
-                     n_dati=DR$daily.report$hourly.nValid,
-                     ...)
+    if(!is.na(DR$daily.report$max.day)) {
+      dbqa.insert_elab(id_elab=id.elab,
+                       v_elab=DR$daily.report$max.day,
+                       type="F",
+                       ts1=date4db(DR$first.time.day+3600*DR$daily.report$hour.max.day),
+                       ts2=date4db(DR$first.time.day+3600*DR$daily.report$hour.max.day+60*60),
+                       n_dati=DR$daily.report$hourly.nValid,
+                       ...)
+      dbCommit(con)  
+    }  
+    
   }
   # daily mean
-  if("mean.day" %in% colnames(DR$daily.report) && !is.na(DR$daily.report$mean.day)) {
-    
+  if("mean.day" %in% colnames(DR$daily.report)) {
+    # mean day
     id.elab=2
     
-    dbqa.delete(con=con, tab="WEB_STAT",
+    dbqa.delete(con=con, tab=tabelladb,
                 keys=c("to_char(GIORNO,'YYYY-MM-DD')",
                        "ID_CONFIG_STAZ",
                        "ID_PARAMETRO",
@@ -371,20 +381,22 @@ write.daily_report <- function(con,
                 verbose=verbose)
     dbCommit(con)
     
-    dbqa.insert_elab(id_elab=id.elab,
-                     v_elab=DR$daily.report$mean.day,
-                     type="F",
-                     ts1=date4db(DR$first.time.day),
-                     ts2=date4db(DR$last.time),
-                     n_dati=DR$daily.report$hourly.nValid,
-                     ...)
+    if(!is.na(DR$daily.report$mean.day)){
+      dbqa.insert_elab(id_elab=id.elab,
+                       v_elab=DR$daily.report$mean.day,
+                       type="F",
+                       ts1=date4db(DR$first.time.day),
+                       ts2=date4db(DR$last.time),
+                       n_dati=DR$daily.report$hourly.nValid,
+                       ...)
+    }    
   }
   
   ## inserisce elaborazioni giornaliere integer
   # hourly nexc (DI QUESTA NON C'E' ANCORA ID_ELABORAZIONE DEFINITO, CHIEDERE A FIL)
   
   ## inserisce elaborazioni cumulate da inizio anno integer
-  ## NB con FLAG=0 e solo se l'anno ? tuttora in corso
+  ## NB con FLAG=0 e solo se l'anno e' tuttora in corso
   if(format(Sys.time(),format = "%Y")==format(DR$last.time,format = "%Y")) {
     # cumul daily (SO2, PM10)
     if(id.param%in%c(1,5)) {
@@ -392,7 +404,7 @@ write.daily_report <- function(con,
                      "1" = 122,
                      "5" = 130)
       
-      dbqa.delete(con=con, tab="WEB_STAT",
+      dbqa.delete(con=con, tab=tabelladb,
                   keys=c("to_char(GIORNO,'YYYY-MM-DD')",
                          "ID_CONFIG_STAZ",
                          "ID_PARAMETRO",
@@ -418,7 +430,7 @@ write.daily_report <- function(con,
     if(id.param==8) {
       ide <- switch (as.character(id.param),
                      "8" = 119)
-      dbqa.delete(con=con, tab="WEB_STAT",
+      dbqa.delete(con=con, tab=tabelladb,
                   keys=c("to_char(GIORNO,'YYYY-MM-DD')",
                          "ID_CONFIG_STAZ",
                          "ID_PARAMETRO",
@@ -445,7 +457,7 @@ write.daily_report <- function(con,
   if(id.param==10) {
     ide <- switch (as.character(id.param),
                    "10" = 118)
-    dbqa.delete(con=con, tab="WEB_STAT",
+    dbqa.delete(con=con, tab=tabelladb,
                 keys=c("to_char(GIORNO,'YYYY-MM-DD')",
                        "ID_CONFIG_STAZ",
                        "ID_PARAMETRO",

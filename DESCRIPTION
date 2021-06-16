@@ -8,7 +8,7 @@ Authors@R: c(person("Giovanni", "Bonafe'", role = c("aut", "cre"),
              person("Roberta", "Amorati",role=c("ctb"),email="ramorati@arpae.it"))
 Depends: ROracle (>= 1.1-11), DBI, xts (>= 0.9-7), zoo, caTools (>=
         1.17)
-Description: Funzioni utili per gestire i dati di qualit? dell'aria di Arpa Emilia-Romagna.
+Description: Funzioni utili per gestire i dati di qualita' dell'aria di Arpae Emilia-Romagna.
 License: GPL-2
 Encoding: UTF-8
 NeedsCompilation: no

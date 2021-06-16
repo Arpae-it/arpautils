@@ -185,6 +185,15 @@ dbqa.list.fields <- function(con,tab) {
   return(out)
 }
 
+## restituisce tutti i campi di una tabella
+dbqa.list.fields_all <- function(con,tab) {
+  query <- paste("select * from ",tab)
+  data <- dbGetQuery(con, query)
+  return(data)
+}
+
+
+
 ## visualizza in tabella i parametri (inquinanti)
 ## con i relativi ID
 dbqa.view.param <- function(con,FUN=View) {
@@ -250,7 +259,7 @@ skypost=FALSE) {
                  "AND NVL (cst.dth_f_vld, to_date('",
                  day,
                  "','YYYY-MM-DD')) AND  NVL (cst.cod_config_staz_sw_acq, '999999') <> '999999' AND cst.dth_f_vld is null",
-                 if(!skypost) "AND NVL (cst.flg_mobile, 0) = 0 ",
+                 if(!skypost) " AND NVL (cst.flg_mobile, 0) = 0 ",
                  "AND COD_PRV IN (",
                  paste0("'",prov,"'",collapse=","),
                  ")",sep="")
@@ -306,7 +315,7 @@ dbqa.get.datastaz <- function(con,
                            l.time=as.POSIXct(ts.range[2], TZ="Africa/Algiers"))
     #unisce molte serie temporali in una sola,
     ## regolarizzandole a passi orari o giornalieri
-    if(i>1) {(# i identifica il sensore
+    if(i>1) {# i identifica il sensore
       DATA <- xts.blend(tstep, TZ="Africa/Algiers", DATA, Dreg)
     } else {
       DATA <- Dreg
@@ -421,7 +430,7 @@ dbqa.get.idparam <- function(poll, con=NULL) {
                      "Cd"=14,
                      "Pb"=12)
   
-  ## se non ? predefinito, lo cerca nei nomi del DB
+  ## se non e' predefinito, lo cerca nei nomi del DB
   if(is.null(id.param)) {
     if(is.null(con)) {
       cat("Cannot search in the DB without 'con' argument",sep="\n")
@@ -479,7 +488,7 @@ dbqa.get.elab <- function(con,
   
   if(keep.all) { # output originale completo
     out <- dat  
-  } else {  # oppure colonne selezionate (pi? leggibile)
+  } else {  # oppure colonne selezionate (piu' leggibile)
     out <- data.frame(ID_CONFIG_STAZ=dat$ID_CONFIG_STAZ, 
                       V_ELAB=dat[,paste("V_ELAB_",type.elab,sep="")],
                       ID_ELAB=dat$ID_ELABORAZIONE,
@@ -489,7 +498,7 @@ dbqa.get.elab <- function(con,
   return(out)
 }
 
-## restituisce descrizione di una o pi? elaborazioni statistiche
+## restituisce descrizione di una o piu' elaborazioni statistiche
 dbqa.descr.elab <- function(con, id.elab=NULL) {
   qqq <- "select ID_ELABORAZIONE,DES_ELABORAZIONE from WEB_ELAB"
   dat <- dbGetQuery(conn = con,qqq)
@@ -564,7 +573,7 @@ dbqa.put.flgsens<-function (con,
   #print(dataflg)
   # controllo: se gia' presente il record allora update, altrimenti insert
   
-  #if ( is.null(dataflg) | nrow(dataflg)==0 | dataflg$quanti == 0  ) { #errore perchè se dataflg==0 dataflg$quanti non esiste
+  #if ( is.null(dataflg) | nrow(dataflg)==0 | dataflg$quanti == 0  ) { #errore perche' se dataflg==0 dataflg$quanti non esiste
   if ( is.null(dataflg) | ifelse(nrow(dataflg)==0,TRUE, dataflg$QUANTI == 0 ) ) { 
     #entri nell'if se dataflg è null oppure ha 0 righe, oppure non ha zero righe,ma quanti=0
     

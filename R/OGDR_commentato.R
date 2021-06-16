@@ -1,10 +1,12 @@
-## credenziali di accesso al DB prendile dalla configurazione
+## credenziali di accesso al DB prendile dal file credenziali.txt
 db_usr = ""
 db_pwd = ""
 db_name = ""  
+ldebug=FALSE
+
 
 ## funzione di help
-#script <- "OGDR.R"
+script <- "OGDR.R"
 usage <- function() {
   stop(paste("\n",
              "Uso: Rscript ",script," --args PROV INQ [DATA]\n",
@@ -19,24 +21,21 @@ usage <- function() {
 }
 
 ## gestisce argomenti
-# args <- commandArgs(trailingOnly = TRUE)
-# if(length(args)>2) {
-#   Prov <- args[2]
-#   id.param <- args[3]
-# } else {
-#   usage()
-# }
-# 
-# 
-# if(!Prov %in% c("PC","PR","RE","MO","BO","FE","RA","FC","RN")) {
-#   usage()
-# }
+if(ldebug) {
+  #__________________________________________
+  args=c(3,"PR",8,"2021-05-28") #il primo argomento non serve
+  print("***debug - INSERISCO I PARAMETRI A MANO :")
+  print(args)
+  #__________________________________________
+} else {
+ args <- commandArgs(trailingOnly = TRUE)
+ if(length(args)>2) {
+   Prov <- args[2]
+   id.param <- args[3]
+ } else {
+   usage()
+ }}
 
-#INSERISCO I PARAMETRI A MANO ______________
-#id.param<-111
-#Prov<-'BO'
-args=c(3,"BO",8,"2020-07-09") #il primo argomento non serve
-#__________________________________________
 if(length(args)>2) {
   Prov <- args[2]
   id.param <- args[3]
@@ -57,7 +56,7 @@ if(length(args)>3) {
 filelock <- paste("OGDR_",Prov,".lock",sep="")
 fileprof <- paste("OGDR_",Prov,"_profiling.csv",sep="")
 lock <- file.exists(filelock)
-if(lock) {
+if(lock && !ldebug) {
   stop(paste(script,"already in use"))
 } else {
   file.create(filelock)
@@ -65,8 +64,17 @@ if(lock) {
 
 ## calcola e scrive elaborazioni per statistiche annuali e bollettini
 library(arpautils)
+if(ldebug){
+ source("R/generic_daily_report.R")
+ source("R/ozone_daily_report.R")
+ source("R/dbqa.functions.R")
+ source("R/time.functions.R")
+ source("R/xts.functions.R")
+ source("R/aqstat.functions.R")
+}
+
 sessionInfo()->SI
-print(SI)
+#if(ldebug) print(SI)
 tt <- NULL
 incr.sys.time <- function(tab.in,name,expr) { #serve per contare il tempo che impiega
   t1 <- system.time(expr)
@@ -78,13 +86,22 @@ tt <- incr.sys.time(tt,"connect",{
   cfg <- dbqa.config(db_usr, db_pwd, db_name)#configura con user del database, utente e database
   con <- dbqa.connect(db_usr, db_pwd, db_name) #si connette al database
 })
+## debug ---
+if(ldebug) print(paste("***debug",Prov,as.POSIXct(day)))
+#if(ldebug) {print("***debug"); print(con);}
+## debug ---
+
 tt <- incr.sys.time(tt,"list",{ #calcola il tempo che impiega
   SSS <- dbqa.list.active.staz_mobil(con,Prov,as.POSIXct(day)) 
       #legge sul database quali sono le province attive oggi
 })
-#staz<-7000024
+
+## debug inizio
+if (ldebug) SSS<-c(2000219) 
+## debug fine
+
 for (staz in SSS) {
-  if(exists("Dat")) rm(Dat) #Dat ? un oggetto  d'appoggio che, se gi? esistente, va cancellato per garantire che sia pulita
+  if(exists("Dat")) rm(Dat) #Dat e' un oggetto  d'appoggio che, se gia' esistente, va cancellato per garantire che sia pulita
   tt <- incr.sys.time(tt,paste("prepare",staz),{
     if(id.param %in% c(5,111)) {#5=PM10
       tstep="d"
@@ -92,7 +109,7 @@ for (staz in SSS) {
       tstep="H"
     }
     if(id.param == 7) { #ozono
-	Dat <- prepare.ozone_daily_report(con,id.staz=staz,Date=day)	#scarica i dati dell'ozono con questa appostia procedura
+	   Dat <- prepare.ozone_daily_report(con,id.staz=staz,Date=day)	#scarica i dati dell'ozono con questa appostia procedura
     } else {
  	   Dat <- prepare.daily_report(con,id.staz=staz,id.param=id.param,Date=day,tstep=tstep) #altrimenti con una generica
 	}	
@@ -122,24 +139,34 @@ for (staz in SSS) {
         thr.ave8h.max=10
       }
       if(id.param == 7) { #ozono
-	ODR <- calculate.ozone_daily_report(Dat) #"ODR" = Ozone dAily Report
-	}else{
+	      ODR <- calculate.ozone_daily_report(Dat) #"ODR" = Ozone dAily Report
+	    }else{
+	      #print("***debug")
+	      #if(ldebug) print(paste(id.param, thr.daily.ave, thr.ave8h.max, thr.hourly))
 	      DR <- calculate.daily_report(data=Dat,id.param=id.param, #"DR" =dAily Report
-                                    thr.daily.ave=thr.daily.ave,
-                                    thr.ave8h.max=thr.ave8h.max,
-                                    thr.hourly=thr.hourly)
-	}
-
+                                     thr.daily.ave=thr.daily.ave,
+                                     thr.ave8h.max=thr.ave8h.max,
+                                     thr.hourly=thr.hourly)
+	    }
     })
     tt <- incr.sys.time(tt,paste("write",staz),{
-     if(id.param == 7) { #ozono	
+    if(id.param == 7) { #ozono	
       try(write.ozone_daily_report(con,ODR,verbose=F))
-###Debug print(ODR)
-	}else{
-      try(write.daily_report(con,DR,verbose=F,id.param=id.param))
-###Debug print(DR)
-	}
-    })
+	  }else{
+	    verbose<-F
+	    if(ldebug) {
+	      verbose<-T
+	      #DR$daily.report$mean.day<-3
+	      #DR$daily.report$max.day<-3
+	      #DR$daily.report$hour.max.day<-3
+	      #DR$daily.report$cumul.hourly.nexc<-3
+	    }
+      try(write.daily_report(con,DR,verbose=verbose,id.param=id.param))
+## debug 
+if(ldebug) print(DR)
+## debug 
+	  }
+   })
   }  
 }
 dbDisconnect(con)
