@@ -321,9 +321,6 @@ write.daily_report <- function(con,
                            id.param, 
                            id.elab),
                   verbose=verbose)
-      dbCommit(con)
-      
-      if(!is.na(DR$daily.report$max.ave.8h)) {
         dbqa.insert_elab(id_elab=id.elab,
                          v_elab=DR$daily.report$max.ave.8h,
                          type="F",
@@ -331,7 +328,7 @@ write.daily_report <- function(con,
                          ts2=date4db(DR$last.time),
                          n_dati=NA,
                          ...)
-      }  
+        dbCommit(con)
     }
   }
   
@@ -350,9 +347,7 @@ write.daily_report <- function(con,
                          id.param, 
                          id.elab),
                 verbose=verbose)
-    dbCommit(con)
-    
-    if(!is.na(DR$daily.report$max.day)) {
+
       dbqa.insert_elab(id_elab=id.elab,
                        v_elab=DR$daily.report$max.day,
                        type="F",
@@ -361,8 +356,6 @@ write.daily_report <- function(con,
                        n_dati=DR$daily.report$hourly.nValid,
                        ...)
       dbCommit(con)  
-    }  
-    
   }
   # daily mean
   if("mean.day" %in% colnames(DR$daily.report)) {
@@ -379,9 +372,6 @@ write.daily_report <- function(con,
                          id.param, 
                          id.elab),
                 verbose=verbose)
-    dbCommit(con)
-    
-    if(!is.na(DR$daily.report$mean.day)){
       dbqa.insert_elab(id_elab=id.elab,
                        v_elab=DR$daily.report$mean.day,
                        type="F",
@@ -389,7 +379,7 @@ write.daily_report <- function(con,
                        ts2=date4db(DR$last.time),
                        n_dati=DR$daily.report$hourly.nValid,
                        ...)
-    }    
+      dbCommit(con)
   }
   
   ## inserisce elaborazioni giornaliere integer
@@ -440,7 +430,6 @@ write.daily_report <- function(con,
                            id.param, 
                            ide),
                   verbose=verbose)
-      dbCommit(con)
       
       dbqa.insert_elab(id_elab=ide,
                        v_elab=DR$daily.report$cumul.hourly.nexc,
@@ -450,6 +439,7 @@ write.daily_report <- function(con,
                        n_dati=DR$daily.report$cumul.hourly.nValid,
                        flg_elab = 0,
                        ...)
+      dbCommit(con)
     }
   } 
   
@@ -467,9 +457,7 @@ write.daily_report <- function(con,
                          id.param, 
                          ide),
                 verbose=verbose)
-    dbCommit(con)
-    
-    dbqa.insert_elab(id_elab=ide,
+     dbqa.insert_elab(id_elab=ide,
                      v_elab=DR$daily.report$cumul.ave8h.nexc,
                      type="I",
                      ts1=date4db(DR$first.time.year),
@@ -477,6 +465,7 @@ write.daily_report <- function(con,
                      n_dati=DR$daily.report$cumul.ave8h.nValid,
                      flg_elab = 0,
                      ...)
+    dbCommit(con)
   }
   
   ## inserisce elaborazioni di evento floating (AL MOMENTO NON SONO RICHIESTE/GESTITE)
