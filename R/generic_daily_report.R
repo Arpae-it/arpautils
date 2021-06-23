@@ -7,8 +7,8 @@
 ## 4) scrittura su DB
 
 
-tabelladb<-"WEB_STAT_CPY"
-#tabelladb<-"WEB_STAT"
+#tabelladb<-"WEB_STAT_CPY"
+tabelladb<-"WEB_STAT"
 
 
 prepare.daily_report <- function(con,
