@@ -307,7 +307,8 @@ write.daily_report <- function(con,
   ## inserisce elaborazioni giornaliere floating
   # max med 8h (solo CO)
   if("max.ave.8h" %in% colnames(DR$daily.report)) {
-    if(id.param==10) { # CO
+    # CO
+    if(id.param==10) { 
       # max average 8h
       id.elab=3
       
@@ -347,7 +348,6 @@ write.daily_report <- function(con,
                          id.param, 
                          id.elab),
                 verbose=verbose)
-
       dbqa.insert_elab(id_elab=id.elab,
                        v_elab=DR$daily.report$max.day,
                        type="F",
@@ -404,8 +404,6 @@ write.daily_report <- function(con,
                            id.param, 
                            ide),
                   verbose=verbose)
-      dbCommit(con)
-      
       dbqa.insert_elab(id_elab=ide,
                        v_elab=DR$daily.report$cumul.daily.nexc,
                        type="I",
@@ -414,6 +412,7 @@ write.daily_report <- function(con,
                        n_dati=DR$daily.report$cumul.daily.nValid,
                        flg_elab = 0,
                        ...)
+      dbCommit(con)
     }
     
     # cumul hourly (NO2)
@@ -430,7 +429,6 @@ write.daily_report <- function(con,
                            id.param, 
                            ide),
                   verbose=verbose)
-      
       dbqa.insert_elab(id_elab=ide,
                        v_elab=DR$daily.report$cumul.hourly.nexc,
                        type="I",

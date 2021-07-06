@@ -214,7 +214,8 @@ dbqa.view.staz <- function(con,FUN=View) {
   FUN(Data)
 }
 
-dbqa.isrrqa <- function(con,Id) { #dovrebbe valutare se una centralina apprtiene alla rete di qualità dell'aria
+# valuta se una centralina apprtiene alla rete di qualità dell'aria
+dbqa.isrrqa <- function(con,Id) {
   isr <- function(id) substr(dbGetQuery(con,paste("select aa_web.pk$99$zone.isRRQA_NEW (",
                                                   id,
                                                   ") from dual",
@@ -246,10 +247,11 @@ dbqa.list.active.staz <- function(con,
   return(Data)
 }
 
+#Come la funzione precedente, ma modificata in modo da prendere anche i laboratori mobili
 dbqa.list.active.staz_mobil <- function(con,
-prov=c("PC","PR","RE","MO","BO","FE","RA","FC","RN"),
-Day=Sys.Date(),
-skypost=FALSE) {
+                                        prov=c("PC","PR","RE","MO","BO","FE","RA","FC","RN"),
+                                        Day=Sys.Date(),
+                                        mobile=FALSE) {
   day <- format(Day,format="%Y-%m-%d")
   query <- paste("SELECT ID_CONFIG_STAZ ",
                  "FROM aa_aria.VO$01$CONFIG_STAZIONI cst ",
@@ -258,8 +260,8 @@ skypost=FALSE) {
                  "','YYYY-MM-DD')) BETWEEN cst.dth_i_vld ",
                  "AND NVL (cst.dth_f_vld, to_date('",
                  day,
-                 "','YYYY-MM-DD')) AND  NVL (cst.cod_config_staz_sw_acq, '999999') <> '999999' AND cst.dth_f_vld is null",
-                 if(!skypost) " AND NVL (cst.flg_mobile, 0) = 0 ",
+                 "','YYYY-MM-DD')) ",
+                 if(!mobile) " and  nvl (cst.cod_config_staz_sw_acq, '999999') <> '999999' and cst.dth_f_vld is null ",
                  "AND COD_PRV IN (",
                  paste0("'",prov,"'",collapse=","),
                  ")",sep="")
@@ -273,7 +275,7 @@ skypost=FALSE) {
 ## scarica i dati disponibili dai sensori
 ## corrispondenti, così come sono, orari o giornalieri
 dbqa.get.datastaz <- function(con,
-                              ts.range, #ts.range=c(i.date,f.date) in prepare.daily.report
+                              ts.range,
                               id.staz,
                               id.param,
                               flg=1,
@@ -288,13 +290,14 @@ dbqa.get.datastaz <- function(con,
   # $idcfgsens: i codici di ogni sensore , 
   # $idate: le date di inizio di goni sensore con 
   #$fdate le date di fine di ogni sensore con 
-  cfgsens <- dbqa.get.idcfgsens(con, #
-                                id.param,    
-                                i.date=ts.range[1],   
+  cfgsens <- dbqa.get.idcfgsens(con,
+                                id.param,
+                                i.date=ts.range[1],
                                 f.date=ts.range[2],
                                 id.staz)
   DATA <- NULL
-  nsens <- length(cfgsens$idcfgsens) #fornisce il numero di sensori (attivi o meno)
+  # fornisce il numero di sensori (attivi o meno)
+  nsens <- length(cfgsens$idcfgsens)
   #print(lod.manage) 
   if(nsens>0) for (i in 1:nsens) {
     idate <- cfgsens$idate[i]
@@ -313,9 +316,10 @@ dbqa.get.datastaz <- function(con,
     Dreg <- xts.regolarize(tstep,Dat,
                            f.time=as.POSIXct(ts.range[1], TZ="Africa/Algiers"),
                            l.time=as.POSIXct(ts.range[2], TZ="Africa/Algiers"))
-    #unisce molte serie temporali in una sola,
-    ## regolarizzandole a passi orari o giornalieri
-    if(i>1) {# i identifica il sensore
+    # unisce molte serie temporali in una sola,
+    # regolarizzandole a passi orari o giornalieri
+    # i identifica il sensore
+    if(i>1) {
       DATA <- xts.blend(tstep, TZ="Africa/Algiers", DATA, Dreg)
     } else {
       DATA <- Dreg
